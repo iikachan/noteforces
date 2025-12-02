@@ -152,7 +152,16 @@ def note_detail(current_user):
     note = Note.query.filter_by(id=noteId, userId=current_user.id).first()
     if not note:
         return json_response(4003, 'Note not found', status=404)
-    return json_response(0, 'ok', {'noteId': note.id, 'title': note.title, 'content': note.content, 'category': note.category, 'tags': note.tags.split(','), 'createdAt': note.createdAt, 'updatedAt': note.updatedAt})
+    return json_response(0, 'ok', {
+        'noteId': note.id,
+        'title': note.title,
+        'content': note.content,
+        'category': note.category,
+        'tags': note.tags.split(',') if note.tags else [],
+        'createdAt': note.createdAt,
+        'updatedAt': note.updatedAt,
+        'shareToken': note.shareToken
+    })
 
 @app.route('/note/list', methods=['GET'])
 @login_required
@@ -196,7 +205,7 @@ def share_enable(current_user):
     if not note.shareToken:
         note.shareToken = str(uuid.uuid4())
         db.session.commit()
-    return json_response(0, 'ok', {'shareToken': note.shareToken, 'shareUrl': f'/share/view?token={note.shareToken}'})
+    return json_response(0, 'ok', {'shareToken': note.shareToken})
 
 @app.route('/share/disable', methods=['POST'])
 @login_required

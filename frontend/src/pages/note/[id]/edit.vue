@@ -1,7 +1,5 @@
 <template>
   <v-app>
-    <NavDrawer title="编辑笔记" />
-
     <v-main>
       <v-container>
         <NoteForm
@@ -23,7 +21,6 @@
 import { reactive, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from '@/plugins/axios'
-import NavDrawer from '@/components/NavDrawer.vue'
 import NoteForm from '@/components/NoteForm.vue'
 
 interface NoteDetail {
@@ -77,5 +74,9 @@ async function onSubmit(data: typeof form) {
   }
 }
 
-onMounted(loadNote)
+onMounted(() => {
+  loadNote()
+  // 页面加载时自动滚动到顶部
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+})
 </script>
