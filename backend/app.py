@@ -145,6 +145,10 @@ def run_tests():
 
     print("\nAll tests passed." if all_passed else "\nSome tests failed.")
 
+# 导入密码修改模块并设置路由
+from password_change import setup_password_change
+setup_password_change(app, db, User)
+
 if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] == 'test':
         run_tests()
