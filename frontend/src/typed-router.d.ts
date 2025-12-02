@@ -19,8 +19,11 @@ declare module 'vue-router/auto-routes' {
    */
   export interface RouteNamedMap {
     '/': RouteRecordInfo<'/', '/', Record<never, never>, Record<never, never>>,
-    '/Login': RouteRecordInfo<'/Login', '/Login', Record<never, never>, Record<never, never>>,
-    '/Register': RouteRecordInfo<'/Register', '/Register', Record<never, never>, Record<never, never>>,
+    '/login': RouteRecordInfo<'/login', '/login', Record<never, never>, Record<never, never>>,
+    '/note/[id]/': RouteRecordInfo<'/note/[id]/', '/note/:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
+    '/note/[id]/edit': RouteRecordInfo<'/note/[id]/edit', '/note/:id/edit', { id: ParamValue<true> }, { id: ParamValue<false> }>,
+    '/note/create': RouteRecordInfo<'/note/create', '/note/create', Record<never, never>, Record<never, never>>,
+    '/register': RouteRecordInfo<'/register', '/register', Record<never, never>, Record<never, never>>,
   }
 
   /**
@@ -38,12 +41,24 @@ declare module 'vue-router/auto-routes' {
       routes: '/'
       views: never
     }
-    'src/pages/Login.vue': {
-      routes: '/Login'
+    'src/pages/login.vue': {
+      routes: '/login'
       views: never
     }
-    'src/pages/Register.vue': {
-      routes: '/Register'
+    'src/pages/note/[id]/index.vue': {
+      routes: '/note/[id]/'
+      views: never
+    }
+    'src/pages/note/[id]/edit.vue': {
+      routes: '/note/[id]/edit'
+      views: never
+    }
+    'src/pages/note/create.vue': {
+      routes: '/note/create'
+      views: never
+    }
+    'src/pages/register.vue': {
+      routes: '/register'
       views: never
     }
   }
