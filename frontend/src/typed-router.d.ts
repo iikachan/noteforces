@@ -24,6 +24,7 @@ declare module 'vue-router/auto-routes' {
     '/note/[id]/edit': RouteRecordInfo<'/note/[id]/edit', '/note/:id/edit', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     '/note/create': RouteRecordInfo<'/note/create', '/note/create', Record<never, never>, Record<never, never>>,
     '/register': RouteRecordInfo<'/register', '/register', Record<never, never>, Record<never, never>>,
+    '/user': RouteRecordInfo<'/user', '/user', Record<never, never>, Record<never, never>>,
   }
 
   /**
@@ -59,6 +60,10 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/register.vue': {
       routes: '/register'
+      views: never
+    }
+    'src/pages/user.vue': {
+      routes: '/user'
       views: never
     }
   }

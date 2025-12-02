@@ -9,7 +9,7 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///noteforces.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
-CORS(app, supports_credentials=True, origins=["http://127.0.0.1:3000"])
+CORS(app, supports_credentials=True, origins=["http://127.0.0.1:3000", "http://localhost:3000"])
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
