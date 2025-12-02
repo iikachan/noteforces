@@ -1,9 +1,9 @@
 <template>
-  <v-app-bar color="primary" flat>
-    <v-app-bar-nav-icon @click="drawer = !drawer" />
+  <v-app-bar app fixed color="primary" flat>
+    <v-app-bar-nav-icon v-if="showDrawer" @click="drawer = !drawer" />
     <v-toolbar-title>{{ title }}</v-toolbar-title>
     <v-spacer />
-    <v-menu offset-y>
+    <v-menu v-if="showUserMenu" offset-y>
       <template #activator="{ props }">
         <v-btn icon v-bind="props">
           <v-icon>mdi-account</v-icon>
@@ -24,7 +24,7 @@
     </v-menu>
   </v-app-bar>
 
-  <v-navigation-drawer v-model="drawer" app temporary>
+  <v-navigation-drawer v-if="showDrawer" v-model="drawer" app fixed temporary>
     <v-list>
       <v-list-item-group>
         <v-list-item @click="filterCategory('')">
@@ -59,8 +59,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import axios from '@/plugins/axios'
 import { useNoteStore } from '@/stores/note'
 
@@ -70,30 +70,49 @@ interface User {
   role: string
 }
 
-const props = defineProps({
-  title: { type: String, default: '' }
-})
-
-const noteStore = useNoteStore()
+const props = defineProps({ title: { type: String, default: '' } })
 const drawer = ref(false)
 const user = ref<User | null>(null)
 const categories = ref<string[]>([])
-
+const noteStore = useNoteStore()
 const router = useRouter()
-const token = localStorage.getItem('token')
-if (token) axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+const route = useRoute()
 
+// 控制在登录/注册/分享页隐藏抽屉和用户菜单
+const showDrawer = computed(() => {
+  return !route.path.startsWith('/login') &&
+         !route.path.startsWith('/register') &&
+         !route.path.startsWith('/share/')
+})
+const showUserMenu = computed(() => showDrawer.value && !!user.value)
+
+// 设置 axios token
+function setToken(token: string | null) {
+  if (token) axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+  else delete axios.defaults.headers.common['Authorization']
+}
+
+// 加载用户信息
 async function loadUser() {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    user.value = null
+    setToken(null)
+    return
+  }
+  setToken(token)
   try {
     const res = await axios.get('/user/me')
     if (res.data.code === 0) user.value = res.data.data
-    else router.push('/login')
+    else user.value = null
   } catch {
-    router.push('/login')
+    user.value = null
   }
 }
 
+// 加载笔记分类
 async function loadCategories() {
+  if (!user.value) return
   try {
     const res = await axios.get('/note/categories')
     if (res.data.code === 0) categories.value = res.data.data.categories
@@ -109,6 +128,7 @@ function filterCategory(cat: string) {
 function logout() {
   axios.post('/user/logout').finally(() => {
     localStorage.removeItem('token')
+    user.value = null
     router.push('/login')
   })
 }
@@ -118,13 +138,29 @@ function goAdminUsers() { router.push('/admin/users') }
 function goAdminNotes() { router.push('/admin/notes') }
 
 onMounted(() => {
-  loadUser()
-  loadCategories()
+  loadUser().then(loadCategories)
+
+  // 监听 localStorage token 变化
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'token') loadUser().then(loadCategories)
+  })
+
+  // 监听登录成功事件
+  window.addEventListener('login-success', () => {
+    loadUser().then(loadCategories)
+  })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('storage', (e) => {
+    if (e.key === 'token') loadUser().then(loadCategories)
+  })
+  window.removeEventListener('login-success', () => {
+    loadUser().then(loadCategories)
+  })
 })
 </script>
 
 <style scoped>
-.v-navigation-drawer {
-  width: 240px;
-}
+.v-navigation-drawer { width: 240px; }
 </style>

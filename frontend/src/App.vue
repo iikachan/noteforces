@@ -1,9 +1,106 @@
 <template>
   <v-app>
-    <router-view />
+    <NavDrawer :title="title" app />
+
+    <v-main class="pt-0">
+      <router-view />
+      <v-btn
+        v-show="showBackTop"
+        class="fab-top"
+        color="primary"
+        icon
+        @click="scrollTop"
+      >
+        <v-icon>mdi-arrow-up</v-icon>
+      </v-btn>
+    </v-main>
   </v-app>
 </template>
 
-<script lang="ts" setup>
-  //
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import NavDrawer from '@/components/NavDrawer.vue'
+import axios from '@/plugins/axios'
+
+const route = useRoute()
+const router = useRouter()
+const title = ref('')
+
+// 动态更新导航栏标题
+function updateTitle() {
+  if (route.path.startsWith('/login')) title.value = '登录'
+  else if (route.path.startsWith('/register')) title.value = '注册'
+  else if (route.path.startsWith('/note/create')) title.value = '创建笔记'
+  else if (/^\/note\/\d+\/edit$/.test(route.path)) title.value = '编辑笔记' // 编辑页面
+  else if (/^\/note\/\d+$/.test(route.path)) title.value = '笔记详情'
+  else if (route.path.startsWith('/share/')) title.value = '笔记详情'
+  else if (route.path === '/user') title.value = '用户设置'
+  else if (route.path.startsWith('/admin/users')) title.value = '用户管理'
+  else if (route.path.startsWith('/admin/notes')) title.value = '笔记管理'
+  else title.value = ''
+}
+
+watch(
+  () => route.fullPath,
+  () => updateTitle(),
+  { immediate: true }
+)
+
+// 回到顶部按钮
+const showBackTop = ref(false)
+function onScroll() {
+  showBackTop.value = window.scrollY > 300
+}
+function scrollTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+// 登录检测
+async function checkLogin() {
+  const token = localStorage.getItem('token')
+  const publicPaths = ['/login', '/register']
+  const isShare = route.path.startsWith('/share/')
+
+  if (!token) {
+    if (!publicPaths.some(p => route.path.startsWith(p)) && !isShare) {
+      router.replace('/login')
+    }
+    return
+  }
+
+  axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+  try {
+    const res = await axios.get('/user/me')
+    if (res.data.code !== 0) {
+      localStorage.removeItem('token')
+      if (!publicPaths.some(p => route.path.startsWith(p)) && !isShare) {
+        router.replace('/login')
+      }
+    }
+  } catch {
+    localStorage.removeItem('token')
+    if (!publicPaths.some(p => route.path.startsWith(p)) && !isShare) {
+      router.replace('/login')
+    }
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('scroll', onScroll)
+  checkLogin()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', onScroll)
+})
 </script>
+
+<style scoped>
+.fab-top {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1000;
+}
+</style>

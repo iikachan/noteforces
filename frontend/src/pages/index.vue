@@ -1,39 +1,30 @@
 <template>
-  <v-app>
-    <NavDrawer title="笔记列表" />
+  <v-container>
+    <v-btn color="primary" class="mb-4" @click="createNote">创建笔记</v-btn>
 
-    <v-main>
-      <v-container>
-        <v-btn color="primary" class="mb-4" @click="createNote">创建笔记</v-btn>
+    <v-alert
+      v-if="!loadingNotes && notesFiltered.length === 0"
+      type="info"
+      variant="outlined"
+    >
+      暂无笔记。
+    </v-alert>
 
-        <v-alert
-          v-if="!loadingNotes && notesFiltered.length === 0"
-          type="info"
-          variant="outlined"
-        >
-          暂无笔记。
-        </v-alert>
-
-        <v-row v-else dense>
-          <v-col v-for="note in notesFiltered" :key="note.noteId" cols="12" md="4">
-            <v-card class="hover-card" @click="openNote(note.noteId)">
-              <v-card-title>{{ note.title }}</v-card-title>
-              <v-card-text>{{ note.content?.slice(0, 80) }}...</v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
-
-        <v-btn class="fab-top" color="primary" icon="mdi-arrow-up" @click="scrollTop" />
-      </v-container>
-    </v-main>
-  </v-app>
+    <v-row v-else dense>
+      <v-col v-for="note in notesFiltered" :key="note.noteId" cols="12" md="4">
+        <v-card class="hover-card" @click="openNote(note.noteId)">
+          <v-card-title>{{ note.title }}</v-card-title>
+          <v-card-text>{{ note.content?.slice(0, 80) }}...</v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from '@/plugins/axios'
-import NavDrawer from '@/components/NavDrawer.vue'
 import { useNoteStore } from '@/stores/note'
 
 interface Note {
@@ -46,7 +37,6 @@ interface Note {
 
 const noteStore = useNoteStore()
 const router = useRouter()
-
 const notes = ref<Note[]>([])
 const loadingNotes = ref(true)
 
@@ -58,7 +48,6 @@ async function loadNotes() {
     const res = await axios.get('/note/list')
     if (res.data.code === 0) {
       notes.value = res.data.data.notes.map((n: any) => ({ ...n, content: '' }))
-
       await Promise.all(
         notes.value.map(async (note: Note) => {
           try {
@@ -88,10 +77,6 @@ function createNote() {
   router.push('/note/create')
 }
 
-function scrollTop() {
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
-
 onMounted(() => {
   loadNotes()
 })
@@ -103,10 +88,5 @@ onMounted(() => {
 }
 .hover-card:hover {
   transform: translateY(-4px);
-}
-.fab-top {
-  position: fixed;
-  right: 24px;
-  bottom: 24px;
 }
 </style>

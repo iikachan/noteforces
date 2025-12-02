@@ -1,79 +1,72 @@
 <template>
-  <v-app>
-    <NavDrawer title="用户设置" />
+  <v-container>
+    <!-- 用户信息卡片 -->
+    <v-card max-width="600" class="mx-auto mt-8">
+      <v-card-title class="text-h6 text-center">用户信息</v-card-title>
+      <v-card-text>
+        <v-text-field
+          label="用户名"
+          v-model="user.username"
+          readonly
+        />
+        <v-text-field
+          label="角色"
+          v-model="user.role"
+          readonly
+        />
+      </v-card-text>
+    </v-card>
 
-    <v-main>
-      <v-container>
-        <!-- 用户信息卡片 -->
-        <v-card max-width="600" class="mx-auto mt-8">
-          <v-card-title class="text-h6 text-center">用户信息</v-card-title>
-          <v-card-text>
-            <v-text-field
-              label="用户名"
-              v-model="user.username"
-              readonly
-            />
-            <v-text-field
-              label="角色"
-              v-model="user.role"
-              readonly
-            />
-          </v-card-text>
-        </v-card>
+    <!-- 修改密码卡片 -->
+    <v-card max-width="600" class="mx-auto mt-4">
+      <v-card-title class="text-h6 text-center">修改密码</v-card-title>
+      <v-card-text>
+        <v-form ref="passwordForm">
+          <v-text-field
+            label="旧密码"
+            v-model="form.oldPassword"
+            type="password"
+            :rules="[rules.required]"
+            required
+          />
+          <v-text-field
+            label="新密码"
+            v-model="form.newPassword"
+            type="password"
+            :rules="[rules.required, rules.password]"
+            required
+          />
+          <v-text-field
+            label="确认新密码"
+            v-model="form.confirmPassword"
+            type="password"
+            :rules="[rules.required, rules.confirmPassword]"
+            required
+          />
+        </v-form>
+      </v-card-text>
+      <v-card-actions>
+        <v-btn color="primary" block @click="onSubmit">修改密码</v-btn>
+      </v-card-actions>
+    </v-card>
 
-        <!-- 修改密码卡片 -->
-        <v-card max-width="600" class="mx-auto mt-4">
-          <v-card-title class="text-h6 text-center">修改密码</v-card-title>
-          <v-card-text>
-            <v-form ref="passwordForm">
-              <v-text-field
-                label="旧密码"
-                v-model="form.oldPassword"
-                type="password"
-                :rules="[rules.required]"
-                required
-              />
-              <v-text-field
-                label="新密码"
-                v-model="form.newPassword"
-                type="password"
-                :rules="[rules.required, rules.password]"
-                required
-              />
-              <v-text-field
-                label="确认新密码"
-                v-model="form.confirmPassword"
-                type="password"
-                :rules="[rules.required, rules.confirmPassword]"
-                required
-              />
-            </v-form>
-          </v-card-text>
-          <v-card-actions>
-            <v-btn color="primary" block @click="onSubmit">修改密码</v-btn>
-          </v-card-actions>
-        </v-card>
-
-        <!-- 顶部提示 -->
-        <v-snackbar
-          v-model="snackbar.show"
-          :color="snackbar.color"
-          timeout="3000"
-          location="top"
-          elevation="2"
-          rounded
-        >
-          {{ snackbar.message }}
-        </v-snackbar>
-      </v-container>
-    </v-main>
-  </v-app>
+    <!-- 顶部提示 -->
+    <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      timeout="3000"
+      location="top"
+      elevation="2"
+      rounded
+    >
+      {{ snackbar.message }}
+    </v-snackbar>
+  </v-container>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import axios from '@/plugins/axios'
-import NavDrawer from '@/components/NavDrawer.vue'
 
 interface User {
   username: string

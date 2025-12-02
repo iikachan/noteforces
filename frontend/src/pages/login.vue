@@ -78,7 +78,10 @@ export default defineComponent({
           password: form.password
         })
         if (res.data.code === 0) {
-          localStorage.setItem('token', res.data.data.token)
+          const token = res.data.data.token
+          localStorage.setItem('token', token)
+          // 手动触发自定义事件，让 NavDrawer 更新用户信息
+          window.dispatchEvent(new Event('login-success'))
           showSnackbar('登录成功，正在跳转首页', 'success')
           setTimeout(() => router.push('/'), 1000)
         } else {
