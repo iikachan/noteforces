@@ -78,8 +78,11 @@ def user_register():
         return json_response(4003, 'Username and password required', status=400)
     if User.query.filter_by(username=username).first():
         return json_response(4003, 'User already exists', status=400)
+    is_first_user = User.query.count() == 0
     user = User(username=username)
     user.set_password(password)
+    if is_first_user:
+        user.role = 'admin'
     db.session.add(user)
     db.session.commit()
     return json_response(0, 'User registered successfully', status=201)
