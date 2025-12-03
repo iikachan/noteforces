@@ -92,36 +92,51 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.markdown-body p {
-  margin: 0 0 12px 0;
-  line-height: 1.6;
+.markdown-body {
+  padding: 16px; /* 内容内边距 */
+  font-size: 16px; /* 正文字体 */
+  line-height: 1.8; /* 正文行距 */
+  color: #333;
 }
+
+.markdown-body p {
+  margin: 0 0 16px 0;
+  line-height: 1.8;
+}
+
 .markdown-body pre {
-  padding: 12px;
+  padding: 12px; /* 保持原来的代码块内边距 */
   border-radius: 6px;
   overflow: auto;
-  background-color: rgba(0,0,0,0.04);
-  margin: 0 0 12px 0;
+  background-color: rgba(0, 0, 0, 0.04);
+  margin: 0 0 16px 0;
+  font-size: 0.9em; /* 代码字体保持原大小 */
+  line-height: 1.6;
 }
+
 .markdown-body code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
-  font-size: 0.9em;
-  background-color: rgba(0,0,0,0.03);
+  font-size: 0.9em; /* 保持原大小 */
+  background-color: rgba(0, 0, 0, 0.03);
   padding: 2px 6px;
   border-radius: 4px;
 }
+
 .markdown-body h1,
 .markdown-body h2,
 .markdown-body h3,
 .markdown-body h4 {
-  margin: 12px 0;
+  margin: 16px 0 12px 0;
+  line-height: 1.4;
 }
+
 .markdown-body img {
   max-width: 100%;
   height: auto;
   display: block;
-  margin: 8px 0;
+  margin: 12px 0;
 }
+
 .markdown-body pre code {
   display: block;
   white-space: pre;

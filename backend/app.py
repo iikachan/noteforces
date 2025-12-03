@@ -127,7 +127,11 @@ def note_create(current_user):
 @login_required
 def note_update(current_user):
     data = get_json_body()
-    note = Note.query.filter_by(id=data.get('noteId'), userId=current_user.id).first()
+    noteId = data.get('noteId')
+    if current_user.role == 'admin':
+        note = db.session.get(Note, noteId)
+    else:
+        note = Note.query.filter_by(id=noteId, userId=current_user.id).first()
     if not note:
         return json_response(4003, 'Note not found', status=404)
     note.title = data.get('title')
@@ -141,7 +145,11 @@ def note_update(current_user):
 @login_required
 def note_delete(current_user):
     data = get_json_body()
-    note = Note.query.filter_by(id=data.get('noteId'), userId=current_user.id).first()
+    noteId = data.get('noteId')
+    if current_user.role == 'admin':
+        note = db.session.get(Note, noteId)
+    else:
+        note = Note.query.filter_by(id=noteId, userId=current_user.id).first()
     if not note:
         return json_response(4003, 'Note not found', status=404)
     db.session.delete(note)
@@ -152,7 +160,10 @@ def note_delete(current_user):
 @login_required
 def note_detail(current_user):
     noteId = request.args.get('noteId')
-    note = Note.query.filter_by(id=noteId, userId=current_user.id).first()
+    if current_user.role == 'admin':
+        note = db.session.get(Note, noteId)
+    else:
+        note = Note.query.filter_by(id=noteId, userId=current_user.id).first()
     if not note:
         return json_response(4003, 'Note not found', status=404)
     return json_response(0, 'ok', {
@@ -202,7 +213,11 @@ def note_categories(current_user):
 @login_required
 def share_enable(current_user):
     data = get_json_body()
-    note = Note.query.filter_by(id=data.get('noteId'), userId=current_user.id).first()
+    noteId = data.get('noteId')
+    if current_user.role == 'admin':
+        note = db.session.get(Note, noteId)
+    else:
+        note = Note.query.filter_by(id=noteId, userId=current_user.id).first()
     if not note:
         return json_response(4003, 'Note not found', status=404)
     if not note.shareToken:
@@ -214,7 +229,11 @@ def share_enable(current_user):
 @login_required
 def share_disable(current_user):
     data = get_json_body()
-    note = Note.query.filter_by(id=data.get('noteId'), userId=current_user.id).first()
+    noteId = data.get('noteId')
+    if current_user.role == 'admin':
+        note = db.session.get(Note, noteId)
+    else:
+        note = Note.query.filter_by(id=noteId, userId=current_user.id).first()
     if not note:
         return json_response(4003, 'Note not found', status=404)
     note.shareToken = None
@@ -227,8 +246,8 @@ def share_view():
     note = Note.query.filter_by(shareToken=token).first()
     if not note:
         return json_response(4003, 'Note not found', status=404)
-    user = User.query.get(note.userId)
-    return json_response(0, 'ok', {'noteId': note.id, 'title': note.title, 'content': note.content, 'owner': user.username})
+    user = db.session.get(User, note.userId)
+    return json_response(0, 'ok', {'noteId': note.id, 'title': note.title, 'content': note.content, 'owner': user.username if user else ''})
 
 @app.route('/admin/users', methods=['GET'])
 @login_required
@@ -246,9 +265,13 @@ def admin_users(current_user):
 @admin_required
 def admin_user_delete(current_user):
     data = get_json_body()
-    user = User.query.get(data.get('userId'))
+    user = db.session.get(User, data.get('userId'))
     if not user:
         return json_response(4003, 'User not found', status=404)
+    if user.role == 'admin':
+        other_users = User.query.filter(User.id != user.id).count()
+        if other_users > 0:
+            return json_response(4004, 'Cannot delete admin while other users exist', status=403)
     db.session.delete(user)
     db.session.commit()
     return json_response(0, 'ok')
@@ -264,7 +287,16 @@ def admin_notes(current_user):
         query = query.filter(Note.title.contains(keyword))
     if userId:
         query = query.filter_by(userId=userId)
-    notes = [{'noteId': n.id, 'title': n.title, 'category': n.category, 'tags': n.tags.split(',')} for n in query.all()]
+    notes = []
+    for n in query.all():
+        user = db.session.get(User, n.userId)
+        notes.append({
+            'noteId': n.id,
+            'title': n.title,
+            'category': n.category,
+            'tags': n.tags.split(',') if n.tags else [],
+            'owner': user.username if user else ''
+        })
     return json_response(0, 'ok', {'notes': notes})
 
 @app.route('/admin/note/delete', methods=['POST'])
@@ -272,7 +304,7 @@ def admin_notes(current_user):
 @admin_required
 def admin_note_delete(current_user):
     data = get_json_body()
-    note = Note.query.get(data.get('noteId'))
+    note = db.session.get(Note, data.get('noteId'))
     if not note:
         return json_response(4003, 'Note not found', status=404)
     db.session.delete(note)
