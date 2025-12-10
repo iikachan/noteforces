@@ -1,10 +1,11 @@
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, jsonify, make_response, Blueprint
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
 from datetime import datetime
 
 app = Flask(__name__)
+api_bp = Blueprint('api', __name__, url_prefix='/api')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///noteforces.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
@@ -67,7 +68,7 @@ def admin_required(func):
     wrapper.__name__ = func.__name__
     return wrapper
 
-@app.route('/user/register', methods=['POST'])
+@api_bp.route('/user/register', methods=['POST'])
 def user_register():
     data = get_json_body()
     username = data.get('username')
@@ -85,7 +86,7 @@ def user_register():
     db.session.commit()
     return json_response(0, 'User registered successfully', status=201)
 
-@app.route('/user/login', methods=['POST'])
+@api_bp.route('/user/login', methods=['POST'])
 def user_login():
     data = get_json_body()
     username = data.get('username')
@@ -96,19 +97,19 @@ def user_login():
     token = user.generate_token()
     return json_response(0, 'Login successful', {'token': token})
 
-@app.route('/user/logout', methods=['POST'])
+@api_bp.route('/user/logout', methods=['POST'])
 @login_required
 def user_logout(current_user):
     current_user.token = None
     db.session.commit()
     return json_response(0, 'Logout successful')
 
-@app.route('/user/me', methods=['GET'])
+@api_bp.route('/user/me', methods=['GET'])
 @login_required
 def user_me(current_user):
     return json_response(0, 'ok', {'id': current_user.id, 'username': current_user.username, 'role': current_user.role})
 
-@app.route('/note/create', methods=['POST'])
+@api_bp.route('/note/create', methods=['POST'])
 @login_required
 def note_create(current_user):
     data = get_json_body()
@@ -121,7 +122,7 @@ def note_create(current_user):
     db.session.commit()
     return json_response(0, 'ok', {'noteId': note.id})
 
-@app.route('/note/update', methods=['POST'])
+@api_bp.route('/note/update', methods=['POST'])
 @login_required
 def note_update(current_user):
     data = get_json_body()
@@ -139,7 +140,7 @@ def note_update(current_user):
     db.session.commit()
     return json_response(0, 'ok')
 
-@app.route('/note/delete', methods=['POST'])
+@api_bp.route('/note/delete', methods=['POST'])
 @login_required
 def note_delete(current_user):
     data = get_json_body()
@@ -154,7 +155,7 @@ def note_delete(current_user):
     db.session.commit()
     return json_response(0, 'ok')
 
-@app.route('/note/detail', methods=['GET'])
+@api_bp.route('/note/detail', methods=['GET'])
 @login_required
 def note_detail(current_user):
     noteId = request.args.get('noteId')
@@ -175,7 +176,7 @@ def note_detail(current_user):
         'shareToken': note.shareToken
     })
 
-@app.route('/note/list', methods=['GET'])
+@api_bp.route('/note/list', methods=['GET'])
 @login_required
 def note_list(current_user):
     keyword = request.args.get('keyword') or ''
@@ -193,21 +194,21 @@ def note_list(current_user):
             notes.append({'noteId': n.id, 'title': n.title, 'category': n.category, 'tags': note_tags})
     return json_response(0, 'ok', {'notes': notes})
 
-@app.route('/note/tags', methods=['GET'])
+@api_bp.route('/note/tags', methods=['GET'])
 @login_required
 def note_tags(current_user):
     notes = Note.query.filter_by(userId=current_user.id).all()
     tags = set(tag for n in notes for tag in (n.tags.split(',') if n.tags else []))
     return json_response(0, 'ok', {'tags': list(tags)})
 
-@app.route('/note/categories', methods=['GET'])
+@api_bp.route('/note/categories', methods=['GET'])
 @login_required
 def note_categories(current_user):
     notes = Note.query.filter_by(userId=current_user.id).all()
     categories = set(n.category for n in notes if n.category)
     return json_response(0, 'ok', {'categories': list(categories)})
 
-@app.route('/share/enable', methods=['POST'])
+@api_bp.route('/share/enable', methods=['POST'])
 @login_required
 def share_enable(current_user):
     data = get_json_body()
@@ -223,7 +224,7 @@ def share_enable(current_user):
         db.session.commit()
     return json_response(0, 'ok', {'shareToken': note.shareToken})
 
-@app.route('/share/disable', methods=['POST'])
+@api_bp.route('/share/disable', methods=['POST'])
 @login_required
 def share_disable(current_user):
     data = get_json_body()
@@ -238,7 +239,7 @@ def share_disable(current_user):
     db.session.commit()
     return json_response(0, 'ok')
 
-@app.route('/share/view', methods=['GET'])
+@api_bp.route('/share/view', methods=['GET'])
 def share_view():
     token = request.args.get('token')
     note = Note.query.filter_by(shareToken=token).first()
@@ -247,7 +248,7 @@ def share_view():
     user = db.session.get(User, note.userId)
     return json_response(0, 'ok', {'noteId': note.id, 'title': note.title, 'content': note.content, 'owner': user.username if user else ''})
 
-@app.route('/admin/users', methods=['GET'])
+@api_bp.route('/admin/users', methods=['GET'])
 @login_required
 @admin_required
 def admin_users(current_user):
@@ -258,7 +259,7 @@ def admin_users(current_user):
     users = [{'id': u.id, 'username': u.username, 'role': u.role} for u in query.all()]
     return json_response(0, 'ok', {'users': users})
 
-@app.route('/admin/user/delete', methods=['POST'])
+@api_bp.route('/admin/user/delete', methods=['POST'])
 @login_required
 @admin_required
 def admin_user_delete(current_user):
@@ -274,7 +275,7 @@ def admin_user_delete(current_user):
     db.session.commit()
     return json_response(0, 'ok')
 
-@app.route('/admin/notes', methods=['GET'])
+@api_bp.route('/admin/notes', methods=['GET'])
 @login_required
 @admin_required
 def admin_notes(current_user):
@@ -297,7 +298,7 @@ def admin_notes(current_user):
         })
     return json_response(0, 'ok', {'notes': notes})
 
-@app.route('/admin/note/delete', methods=['POST'])
+@api_bp.route('/admin/note/delete', methods=['POST'])
 @login_required
 @admin_required
 def admin_note_delete(current_user):
@@ -309,19 +310,20 @@ def admin_note_delete(current_user):
     db.session.commit()
     return json_response(0, 'ok')
 
-@app.route('/admin/logs', methods=['GET'])
+@api_bp.route('/admin/logs', methods=['GET'])
 @login_required
 @admin_required
 def admin_logs(current_user):
     return json_response(0, 'ok', {'logs': []})
 
-@app.route('/health', methods=['GET'])
+@api_bp.route('/health', methods=['GET'])
 def health():
     return json_response(0, 'ok', {'status': 'ok'})
 
-# 导入密码修改模块并设置路由
 from password_change import setup_password_change
-setup_password_change(app, db, User, login_required, json_response)
+setup_password_change(api_bp, db, User, login_required, json_response)
+
+app.register_blueprint(api_bp)
 
 if __name__ == '__main__':
     with app.app_context():
