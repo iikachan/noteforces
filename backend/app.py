@@ -325,7 +325,8 @@ setup_password_change(api_bp, db, User, login_required, json_response)
 
 app.register_blueprint(api_bp)
 
+with app.app_context():
+    db.create_all()
+
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
