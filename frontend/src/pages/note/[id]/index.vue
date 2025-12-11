@@ -25,11 +25,11 @@
               <v-spacer />
               <v-switch
                 v-model="shared"
+                :color="shared ? 'success' : ''"
+                hide-details
+                inset
                 :label="shared ? '已分享' : '未分享'"
                 @change="toggleShare"
-                inset
-                hide-details
-                :color="shared ? 'success' : ''"
               />
             </v-card-actions>
 
@@ -39,7 +39,7 @@
             </v-card-subtitle>
           </v-card>
 
-          <v-snackbar v-model="snackbar.show" :timeout="3000" top :color="snackbar.color">
+          <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000" top>
             {{ snackbar.message }}
           </v-snackbar>
         </v-col>
@@ -49,101 +49,103 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import axios from '@/plugins/axios'
-import NoteContent from '@/components/NoteContent.vue'
+  import { onMounted, ref } from 'vue'
+  import { useRoute, useRouter } from 'vue-router'
+  import NoteContent from '@/components/NoteContent.vue'
+  import axios from '@/plugins/axios'
 
-interface NoteDetail {
-  noteId: number
-  title: string
-  content: string
-  category?: string
-  tags: string[]
-  shareToken?: string
-}
+  interface NoteDetail {
+    noteId: number
+    title: string
+    content: string
+    category?: string
+    tags: string[]
+    shareToken?: string
+  }
 
-const route = useRoute()
-const router = useRouter()
-const note = ref<NoteDetail | null>(null)
-const noteId = Number((route.params as { id: string }).id)
-const snackbar = ref({ show: false, message: '', color: 'success' })
-const shared = ref(false)
-const shareUrl = ref('')
+  const route = useRoute()
+  const router = useRouter()
+  const note = ref<NoteDetail | null>(null)
+  const noteId = Number((route.params as { id: string }).id)
+  const snackbar = ref({ show: false, message: '', color: 'success' })
+  const shared = ref(false)
+  const shareUrl = ref('')
 
-const token = localStorage.getItem('token')
-if (token) axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+  const token = localStorage.getItem('token')
+  if (token) axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
 
-async function loadNote() {
-  try {
-    const res = await axios.get('/note/detail', { params: { noteId } })
-    if (res.data.code === 0) {
-      note.value = res.data.data
-      shared.value = !!note.value?.shareToken
-      if (shared.value && note.value?.shareToken) {
-        shareUrl.value = window.location.origin + `/share/${note.value.shareToken}`
+  async function loadNote () {
+    try {
+      const res = await axios.get('/note/detail', { params: { noteId } })
+      if (res.data.code === 0) {
+        note.value = res.data.data
+        shared.value = !!note.value?.shareToken
+        if (shared.value && note.value?.shareToken) {
+          shareUrl.value = window.location.origin + `/share/${note.value.shareToken}`
+        }
+      } else {
+        router.push('/')
       }
-    } else {
+    } catch {
       router.push('/')
     }
-  } catch {
-    router.push('/')
   }
-}
 
-function goEdit() {
-  router.push(`/note/${noteId}/edit`)
-}
-
-async function deleteNote() {
-  if (!confirm('确定要删除该笔记吗？')) return
-  try {
-    const res = await axios.post('/note/delete', { noteId })
-    if (res.data.code === 0) router.push('/')
-    else alert(res.data.msg)
-  } catch (err: any) {
-    alert(err.response?.data?.msg || '删除失败')
+  function goEdit () {
+    router.push(`/note/${noteId}/edit`)
   }
-}
 
-async function toggleShare() {
-  if (!note.value) return
-  try {
-    if (shared.value) {
-      const res = await axios.post('/share/enable', { noteId })
-      if (res.data.code === 0 && res.data.data?.shareToken) {
-        note.value.shareToken = res.data.data.shareToken
-        shareUrl.value = window.location.origin + `/share/${res.data.data.shareToken}`
-        showSnackbar('分享已启用，链接已复制', 'success')
-        try { await navigator.clipboard.writeText(shareUrl.value) } catch {}
-      } else {
-        shared.value = false
-        showSnackbar(res.data.msg || '分享失败', 'error')
-      }
-    } else {
-      const res = await axios.post('/share/disable', { noteId })
-      if (res.data.code === 0) {
-        note.value.shareToken = undefined
-        shareUrl.value = ''
-        showSnackbar('分享已取消', 'success')
-      } else {
-        shared.value = true
-        showSnackbar(res.data.msg || '取消分享失败', 'error')
-      }
+  async function deleteNote () {
+    if (!confirm('确定要删除该笔记吗？')) return
+    try {
+      const res = await axios.post('/note/delete', { noteId })
+      if (res.data.code === 0) router.push('/')
+      else alert(res.data.msg)
+    } catch (error: any) {
+      alert(error.response?.data?.msg || '删除失败')
     }
-  } catch (err: any) {
-    shared.value = !shared.value
-    showSnackbar(err.response?.data?.msg || '操作失败', 'error')
   }
-}
 
-function showSnackbar(message: string, color: string = 'success') {
-  snackbar.value = { show: true, message, color }
-}
+  async function toggleShare () {
+    if (!note.value) return
+    try {
+      if (shared.value) {
+        const res = await axios.post('/share/enable', { noteId })
+        if (res.data.code === 0 && res.data.data?.shareToken) {
+          note.value.shareToken = res.data.data.shareToken
+          shareUrl.value = window.location.origin + `/#/share/${res.data.data.shareToken}`
+          showSnackbar('分享已启用，链接已复制', 'success')
+          try {
+            await navigator.clipboard.writeText(shareUrl.value)
+          } catch {}
+        } else {
+          shared.value = false
+          showSnackbar(res.data.msg || '分享失败', 'error')
+        }
+      } else {
+        const res = await axios.post('/share/disable', { noteId })
+        if (res.data.code === 0) {
+          note.value.shareToken = undefined
+          shareUrl.value = ''
+          showSnackbar('分享已取消', 'success')
+        } else {
+          shared.value = true
+          showSnackbar(res.data.msg || '取消分享失败', 'error')
+        }
+      }
+    } catch (error: any) {
+      shared.value = !shared.value
+      showSnackbar(error.response?.data?.msg || '操作失败', 'error')
+    }
+  }
 
-onMounted(() => {
-  loadNote()
-})
+  function showSnackbar (message: string, color = 'success') {
+    snackbar.value = { show: true, message, color }
+  }
+
+  onMounted(() => {
+    loadNote()
+  })
 </script>
 
 <style scoped>

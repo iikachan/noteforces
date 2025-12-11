@@ -14,11 +14,11 @@
               </v-card-text>
             </v-card>
 
-            <v-alert v-else-if="!loading" type="error" dense>
+            <v-alert v-else-if="!loading" dense type="error">
               无效的分享链接或笔记不存在
             </v-alert>
 
-            <v-snackbar v-model="snackbar.show" :timeout="3000" top :color="snackbar.color">
+            <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000" top>
               {{ snackbar.message }}
             </v-snackbar>
           </v-col>
@@ -29,51 +29,51 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import axios from '@/plugins/axios'
-import NoteContent from '@/components/NoteContent.vue'
+  import { onMounted, ref } from 'vue'
+  import { useRoute } from 'vue-router'
+  import NoteContent from '@/components/NoteContent.vue'
+  import axios from '@/plugins/axios'
 
-interface NoteDetail {
-  title: string
-  content: string
-  category?: string
-  tags: string[]
-}
-
-const route = useRoute()
-const token = (route.params as { token?: string }).token || ''
-const note = ref<NoteDetail | null>(null)
-const snackbar = ref({ show: false, message: '', color: 'success' })
-const loading = ref(true)
-
-async function loadSharedNote() {
-  if (!token) {
-    showSnackbar('分享链接无效', 'error')
-    loading.value = false
-    return
+  interface NoteDetail {
+    title: string
+    content: string
+    category?: string
+    tags: string[]
   }
-  try {
-    const res = await axios.get('/share/view', { params: { token } })
-    if (res.data.code === 0 && res.data.data) {
-      note.value = res.data.data
-    } else {
-      note.value = null
-      showSnackbar(res.data.msg || '笔记不存在', 'error')
+
+  const route = useRoute()
+  const token = (route.params as { token?: string }).token || ''
+  const note = ref<NoteDetail | null>(null)
+  const snackbar = ref({ show: false, message: '', color: 'success' })
+  const loading = ref(true)
+
+  async function loadSharedNote () {
+    if (!token) {
+      showSnackbar('分享链接无效', 'error')
+      loading.value = false
+      return
     }
-  } catch (err: any) {
-    note.value = null
-    showSnackbar(err.response?.data?.msg || '加载失败', 'error')
-  } finally {
-    loading.value = false
+    try {
+      const res = await axios.get('/share/view', { params: { token } })
+      if (res.data.code === 0 && res.data.data) {
+        note.value = res.data.data
+      } else {
+        note.value = null
+        showSnackbar(res.data.msg || '笔记不存在', 'error')
+      }
+    } catch (error: any) {
+      note.value = null
+      showSnackbar(error.response?.data?.msg || '加载失败', 'error')
+    } finally {
+      loading.value = false
+    }
   }
-}
 
-function showSnackbar(message: string, color: string = 'success') {
-  snackbar.value = { show: true, message, color }
-}
+  function showSnackbar (message: string, color = 'success') {
+    snackbar.value = { show: true, message, color }
+  }
 
-onMounted(() => {
-  loadSharedNote()
-})
+  onMounted(() => {
+    loadSharedNote()
+  })
 </script>
