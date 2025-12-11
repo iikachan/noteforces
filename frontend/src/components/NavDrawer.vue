@@ -84,10 +84,10 @@
   const router = useRouter()
   const route = useRoute()
 
+  const publicPaths = [/^\/login(\/)?$/, /^\/register(\/)?$/, /^\/share(\/.*)?$/]
+
   const showDrawer = computed(() => {
-    return !route.path.startsWith('/login')
-      && !route.path.startsWith('/register')
-      && !route.path.startsWith('/share/')
+    return !publicPaths.some(p => p.test(route.path))
   })
   const showUserMenu = computed(() => showDrawer.value && !!user.value)
 

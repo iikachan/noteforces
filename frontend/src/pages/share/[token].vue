@@ -17,10 +17,6 @@
             <v-alert v-else-if="!loading" dense type="error">
               无效的分享链接或笔记不存在
             </v-alert>
-
-            <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000" top>
-              {{ snackbar.message }}
-            </v-snackbar>
           </v-col>
         </v-row>
       </v-container>
