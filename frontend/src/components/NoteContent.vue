@@ -46,21 +46,10 @@
 
   let mq: MediaQueryList | null = null
 
-  // 动态加载 hljs 样式
   async function loadHljsTheme () {
-    const head = document.head
-    const prevLink = head.querySelector<HTMLLinkElement>('link[data-hljs-theme]')
-    if (prevLink) prevLink.remove()
-    const link = document.createElement('link')
-    link.rel = 'stylesheet'
-    link.dataset.hljsTheme = 'true'
-    link.href = isDark.value
-      ? '/node_modules/highlight.js/styles/github-dark.css'
-      : '/node_modules/highlight.js/styles/github.css'
-    head.append(link)
+    await (isDark.value ? import('highlight.js/styles/github-dark.css') : import('highlight.js/styles/github.css'))
   }
 
-  // 高亮代码块
   function applyHighlight () {
     const root = contentRef.value
     if (!root) return
@@ -68,7 +57,6 @@
     for (const block of codeBlocks) hljs.highlightElement(block as HTMLElement)
   }
 
-  // 渲染 Markdown
   async function updateRenderedHtml () {
     if (!props.content) {
       renderedHtml.value = ''
@@ -92,7 +80,6 @@
     applyHighlight()
   }
 
-  // 监听系统主题切换
   function handleColorSchemeChange (e: MediaQueryListEvent) {
     isDark.value = e.matches
     loadHljsTheme().then(() => nextTick().then(applyHighlight))
@@ -125,18 +112,14 @@
 .markdown-body {
   padding: 16px;
   font-size: 16px;
-  line-height: 1.7; /* 调整行高让文本更紧凑自然 */
-  word-break: break-word; /* 防止长单词撑破布局 */
+  line-height: 1.7;
+  word-break: break-word;
   color: inherit;
   background-color: inherit;
 }
-
-/* 段落 */
 .markdown-body p {
   margin: 0 0 12px 0;
 }
-
-/* 标题 */
 .markdown-body h1,
 .markdown-body h2,
 .markdown-body h3,
@@ -145,8 +128,6 @@
   font-weight: 600;
   line-height: 1.3;
 }
-
-/* 列表 */
 .markdown-body ul,
 .markdown-body ol {
   padding-left: 1.5em;
@@ -155,17 +136,13 @@
 .markdown-body li {
   margin-bottom: 6px;
 }
-
-/* 图片 */
 .markdown-body img {
   max-width: 100%;
   height: auto;
   display: block;
   margin: 12px 0;
-  border-radius: 4px; /* 更柔和 */
+  border-radius: 4px;
 }
-
-/* 表格 */
 .markdown-body table {
   width: 100%;
   border-collapse: collapse;
@@ -177,18 +154,14 @@
   padding: 6px 12px;
   text-align: left;
 }
-/* LIGHT mode 表格边框 */
 .markdown-body.light th,
 .markdown-body.light td {
   border-color: #d0d7de;
 }
-/* DARK mode 表格边框 */
 .markdown-body.dark th,
 .markdown-body.dark td {
   border-color: #444c56;
 }
-
-/* 高亮代码块 hljs */
 .markdown-body.light pre code.hljs,
 .markdown-body.light .hljs {
   background: #f6f8fa !important;
@@ -199,8 +172,6 @@
   background: #2d2d2d !important;
   color: #ddd !important;
 }
-
-/* 亮色模式 */
 .markdown-body.light {
   color: #24292e;
   background-color: #fff;
@@ -211,8 +182,6 @@
 .markdown-body.light code {
   background-color: rgba(0,0,0,0.03);
 }
-
-/* 暗黑模式 */
 .markdown-body.dark {
   color: #ddd;
   background-color: #1e1e1e;
@@ -223,8 +192,6 @@
 .markdown-body.dark code {
   background-color: rgba(255,255,255,0.05);
 }
-
-/* 列表点和数字自然对齐标题 */
 .markdown-body ul,
 .markdown-body ol {
   padding-left: 1.5em;
