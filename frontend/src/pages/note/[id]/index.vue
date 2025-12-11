@@ -39,7 +39,15 @@
             </v-card-subtitle>
           </v-card>
 
-          <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000" top>
+          <!-- 顶部提示弹窗 -->
+          <v-snackbar
+            v-model="snackbar.show"
+            :color="snackbar.color"
+            elevation="2"
+            location="top"
+            rounded
+            timeout="2000"
+          >
             {{ snackbar.message }}
           </v-snackbar>
         </v-col>
@@ -114,10 +122,7 @@
         if (res.data.code === 0 && res.data.data?.shareToken) {
           note.value.shareToken = res.data.data.shareToken
           shareUrl.value = window.location.origin + `/#/share/${res.data.data.shareToken}`
-          showSnackbar('分享已启用，链接已复制', 'success')
-          try {
-            await navigator.clipboard.writeText(shareUrl.value)
-          } catch {}
+          showSnackbar('分享已启用', 'success')
         } else {
           shared.value = false
           showSnackbar(res.data.msg || '分享失败', 'error')

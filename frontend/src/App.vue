@@ -29,15 +29,16 @@
 
   // 动态更新导航栏标题
   function updateTitle () {
-    if (route.path.startsWith('/login')) title.value = '登录'
-    else if (route.path.startsWith('/register')) title.value = '注册'
-    else if (route.path.startsWith('/note/create')) title.value = '创建笔记'
-    else if (/^\/note\/\d+\/edit$/.test(route.path)) title.value = '编辑笔记'
-    else if (/^\/note\/\d+$/.test(route.path)) title.value = '笔记详情'
-    else if (route.path.startsWith('/share')) title.value = '笔记详情'
-    else if (route.path === '/user') title.value = '用户设置'
-    else if (route.path.startsWith('/admin/users')) title.value = '用户管理'
-    else if (route.path.startsWith('/admin/notes')) title.value = '笔记管理'
+    const path = route.path
+    if (/^\/login(\/)?$/.test(path)) title.value = '登录'
+    else if (/^\/register(\/)?$/.test(path)) title.value = '注册'
+    else if (/^\/note\/create(\/)?$/.test(path)) title.value = '创建笔记'
+    else if (/^\/note\/\d+\/edit(\/)?$/.test(path)) title.value = '编辑笔记'
+    else if (/^\/note\/\d+(\/)?$/.test(path)) title.value = '笔记详情'
+    else if (/^\/share(\/.*)?$/.test(path)) title.value = '笔记详情'
+    else if (/^\/user(\/)?$/.test(path)) title.value = '用户设置'
+    else if (/^\/admin\/users(\/)?$/.test(path)) title.value = '用户管理'
+    else if (/^\/admin\/notes(\/)?$/.test(path)) title.value = '笔记管理'
     else title.value = ''
   }
 
@@ -58,7 +59,7 @@
 
   async function checkLogin () {
     const token = localStorage.getItem('token')
-    const publicPaths = [/^\/login$/, /^\/register$/, /^\/share\/.+/]
+    const publicPaths = [/^\/login(\/)?$/, /^\/register(\/)?$/, /^\/share(\/.*)?$/]
     const isPublic = publicPaths.some(p => p.test(route.path))
 
     if (!token) {
