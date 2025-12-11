@@ -81,7 +81,7 @@
         note.value = res.data.data
         shared.value = !!note.value?.shareToken
         if (shared.value && note.value?.shareToken) {
-          shareUrl.value = window.location.origin + `/share/${note.value.shareToken}`
+          shareUrl.value = window.location.origin + `/#/share/${note.value.shareToken}`
         }
       } else {
         router.push('/')
