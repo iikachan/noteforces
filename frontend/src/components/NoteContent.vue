@@ -1,94 +1,94 @@
 <template>
-  <div ref="contentRef" class="markdown-body" v-html="renderedHtml"></div>
+  <div ref="contentRef" class="markdown-body" v-html="renderedHtml" />
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, nextTick, defineProps } from 'vue'
-import { marked } from 'marked'
-import DOMPurify from 'dompurify'
-import hljs from 'highlight.js/lib/core'
-import javascript from 'highlight.js/lib/languages/javascript'
-import typescriptLang from 'highlight.js/lib/languages/typescript'
-import python from 'highlight.js/lib/languages/python'
-import cpp from 'highlight.js/lib/languages/cpp'
-import java from 'highlight.js/lib/languages/java'
-import cssLang from 'highlight.js/lib/languages/css'
-import bash from 'highlight.js/lib/languages/bash'
-import json from 'highlight.js/lib/languages/json'
-import 'highlight.js/styles/github.css'
+  import DOMPurify from 'dompurify'
+  import hljs from 'highlight.js/lib/core'
+  import bash from 'highlight.js/lib/languages/bash'
+  import cpp from 'highlight.js/lib/languages/cpp'
+  import cssLang from 'highlight.js/lib/languages/css'
+  import java from 'highlight.js/lib/languages/java'
+  import javascript from 'highlight.js/lib/languages/javascript'
+  import json from 'highlight.js/lib/languages/json'
+  import python from 'highlight.js/lib/languages/python'
+  import typescriptLang from 'highlight.js/lib/languages/typescript'
+  import { marked } from 'marked'
+  import { defineProps, nextTick, onMounted, ref, watch } from 'vue'
+  import 'highlight.js/styles/github.css'
 
-hljs.registerLanguage('javascript', javascript)
-hljs.registerLanguage('js', javascript)
-hljs.registerLanguage('typescript', typescriptLang)
-hljs.registerLanguage('ts', typescriptLang)
-hljs.registerLanguage('python', python)
-hljs.registerLanguage('py', python)
-hljs.registerLanguage('cpp', cpp)
-hljs.registerLanguage('c++', cpp)
-hljs.registerLanguage('java', java)
-hljs.registerLanguage('css', cssLang)
-hljs.registerLanguage('bash', bash)
-hljs.registerLanguage('sh', bash)
-hljs.registerLanguage('json', json)
+  hljs.registerLanguage('javascript', javascript)
+  hljs.registerLanguage('js', javascript)
+  hljs.registerLanguage('typescript', typescriptLang)
+  hljs.registerLanguage('ts', typescriptLang)
+  hljs.registerLanguage('python', python)
+  hljs.registerLanguage('py', python)
+  hljs.registerLanguage('cpp', cpp)
+  hljs.registerLanguage('c++', cpp)
+  hljs.registerLanguage('java', java)
+  hljs.registerLanguage('css', cssLang)
+  hljs.registerLanguage('bash', bash)
+  hljs.registerLanguage('sh', bash)
+  hljs.registerLanguage('json', json)
 
-marked.setOptions({
-  gfm: true,
-  breaks: true
-})
+  marked.setOptions({
+    gfm: true,
+    breaks: true,
+  })
 
-interface Props {
-  content: string
-}
+  interface Props {
+    content: string
+  }
 
-const props = defineProps<Props>()
+  const props = defineProps<Props>()
 
-const renderedHtml = ref('')
-const contentRef = ref<HTMLElement | null>(null)
+  const renderedHtml = ref('')
+  const contentRef = ref<HTMLElement | null>(null)
 
-async function updateRenderedHtml() {
-  if (!props.content) {
-    renderedHtml.value = ''
+  async function updateRenderedHtml () {
+    if (!props.content) {
+      renderedHtml.value = ''
+      await nextTick()
+      applyHighlight()
+      return
+    }
+
+    const possible = marked.parse(props.content) as string | Promise<string>
+    let html = ''
+
+    if (possible && typeof (possible as any).then === 'function') {
+      try {
+        html = await (possible as Promise<string>)
+      } catch {
+        html = ''
+      }
+    } else {
+      html = String(possible ?? '')
+    }
+
+    renderedHtml.value = DOMPurify.sanitize(html)
     await nextTick()
     applyHighlight()
-    return
   }
 
-  const possible = marked.parse(props.content) as string | Promise<string>
-  let html = ''
-
-  if (possible && typeof (possible as any).then === 'function') {
-    try {
-      html = await (possible as Promise<string>)
-    } catch {
-      html = ''
+  function applyHighlight () {
+    const root = contentRef.value
+    if (!root) return
+    const codeBlocks = root.querySelectorAll('pre code')
+    for (const block of codeBlocks) {
+      try {
+        hljs.highlightElement(block as HTMLElement)
+      } catch {}
     }
-  } else {
-    html = String(possible ?? '')
   }
 
-  renderedHtml.value = DOMPurify.sanitize(html)
-  await nextTick()
-  applyHighlight()
-}
-
-function applyHighlight() {
-  const root = contentRef.value
-  if (!root) return
-  const codeBlocks = root.querySelectorAll('pre code')
-  codeBlocks.forEach((block) => {
-    try {
-      hljs.highlightElement(block as HTMLElement)
-    } catch {}
+  watch(() => props.content, () => {
+    updateRenderedHtml()
   })
-}
 
-watch(() => props.content, () => {
-  updateRenderedHtml()
-})
-
-onMounted(() => {
-  updateRenderedHtml()
-})
+  onMounted(() => {
+    updateRenderedHtml()
+  })
 </script>
 
 <style scoped>

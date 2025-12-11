@@ -13,7 +13,7 @@ export const useUserStore = defineStore('user', {
     user: null as User | null,
   }),
   actions: {
-    async loadUser() {
+    async loadUser () {
       const token = localStorage.getItem('token')
       if (!token) {
         this.user = null
@@ -23,17 +23,16 @@ export const useUserStore = defineStore('user', {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
       try {
         const res = await axios.get('/user/me')
-        if (res.data.code === 0) this.user = res.data.data
-        else this.user = null
+        this.user = res.data.code === 0 ? res.data.data : null
       } catch {
         this.user = null
       }
     },
-    logout() {
+    logout () {
       axios.post('/user/logout').finally(() => {
         localStorage.removeItem('token')
         this.user = null
       })
-    }
-  }
+    },
+  },
 })

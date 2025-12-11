@@ -1,14 +1,14 @@
 <template>
   <v-container>
     <!-- 搜索栏 -->
-    <v-row justify="center" class="mb-4">
+    <v-row class="mb-4" justify="center">
       <v-col cols="12" md="12">
         <v-text-field
           v-model="keyword"
+          clearable
           label="搜索笔记标题"
           prepend-icon="mdi-magnify"
           @keyup.enter="loadNotes"
-          clearable
         >
           <template #append>
             <v-btn color="primary" @click="loadNotes">搜索</v-btn>
@@ -50,69 +50,69 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import axios from '@/plugins/axios'
-import { useNoteStore } from '@/stores/note'
+  import { computed, onMounted, ref } from 'vue'
+  import { useRouter } from 'vue-router'
+  import axios from '@/plugins/axios'
+  import { useNoteStore } from '@/stores/note'
 
-interface Note {
-  noteId: number
-  title: string
-  category?: string
-  tags: string[]
-  content?: string
-}
-
-const noteStore = useNoteStore()
-const router = useRouter()
-const notes = ref<Note[]>([])
-const loadingNotes = ref(true)
-const keyword = ref('')
-
-const token = localStorage.getItem('token')
-if (token) axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-
-async function loadNotes() {
-  loadingNotes.value = true
-  try {
-    const res = await axios.get('/note/list', { params: { keyword: keyword.value } })
-    if (res.data.code === 0) {
-      notes.value = res.data.data.notes.map((n: any) => ({ ...n, content: '' }))
-      await Promise.all(
-        notes.value.map(async (note: Note) => {
-          try {
-            const detailRes = await axios.get('/note/detail', {
-              params: { noteId: note.noteId }
-            })
-            if (detailRes.data.code === 0) note.content = detailRes.data.data.content
-          } catch {}
-        })
-      )
-    }
-  } finally {
-    loadingNotes.value = false
+  interface Note {
+    noteId: number
+    title: string
+    category?: string
+    tags: string[]
+    content?: string
   }
-}
 
-const notesFiltered = computed(() => {
-  return notes.value.filter(n => {
-    const matchesCategory = !noteStore.selectedCategory || n.category === noteStore.selectedCategory
-    const matchesKeyword = !keyword.value || n.title.includes(keyword.value)
-    return matchesCategory && matchesKeyword
+  const noteStore = useNoteStore()
+  const router = useRouter()
+  const notes = ref<Note[]>([])
+  const loadingNotes = ref(true)
+  const keyword = ref('')
+
+  const token = localStorage.getItem('token')
+  if (token) axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+
+  async function loadNotes () {
+    loadingNotes.value = true
+    try {
+      const res = await axios.get('/note/list', { params: { keyword: keyword.value } })
+      if (res.data.code === 0) {
+        notes.value = res.data.data.notes.map((n: any) => ({ ...n, content: '' }))
+        await Promise.all(
+          notes.value.map(async (note: Note) => {
+            try {
+              const detailRes = await axios.get('/note/detail', {
+                params: { noteId: note.noteId },
+              })
+              if (detailRes.data.code === 0) note.content = detailRes.data.data.content
+            } catch {}
+          }),
+        )
+      }
+    } finally {
+      loadingNotes.value = false
+    }
+  }
+
+  const notesFiltered = computed(() => {
+    return notes.value.filter(n => {
+      const matchesCategory = !noteStore.selectedCategory || n.category === noteStore.selectedCategory
+      const matchesKeyword = !keyword.value || n.title.includes(keyword.value)
+      return matchesCategory && matchesKeyword
+    })
   })
-})
 
-function openNote(id: number) {
-  router.push(`/note/${id}`)
-}
+  function openNote (id: number) {
+    router.push(`/note/${id}`)
+  }
 
-function createNote() {
-  router.push('/note/create')
-}
+  function createNote () {
+    router.push('/note/create')
+  }
 
-onMounted(() => {
-  loadNotes()
-})
+  onMounted(() => {
+    loadNotes()
+  })
 </script>
 
 <style scoped>
